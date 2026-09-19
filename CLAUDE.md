@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## Current Phase
-Phase 1: Project Scaffolding & Foundation (Scaffolding complete; baseline tooling, Docker network, and configs established).
+Phase 8 COMPLETE: Application Shell & Physical Case Room Navigation — built React Router client routing, vertical folder tab stack with Apple spring indicator, spatially-anchored content transitions (origin at clicked tab), khaki/cream FolderCard route loading skeletons, closed-folder empty state with spring flap opening animation, CaseSwitcher dropdown in GlassToolbar, and typed fetch wrapper api-client.ts mirroring backend Pydantic schemas. All backend tests (97) and frontend build/lint pass with 0 warnings.
 
 ## Project Overview
 An AI-powered cyber fraud correlator tailored for law enforcement and financial intelligence investigators. The platform ingests fragmented, heterogeneous investigation artifacts (telecom CDR/IPDR dumps, bank transaction/UPI statement sheets, raw email headers, and Android extraction/forensic logs), parses and normalizes disparate records, automatically correlates shared entities across cases, scores operational fraud risk, and produces an exportable, court-ready one-page investigative brief.

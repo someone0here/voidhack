@@ -3,13 +3,187 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  /* Field Dossier Palette */
+  --color-pine: #2e3a2f;
+  --color-pine-light: #3d4d3e;
+  --color-pine-dark: #1f2720;
+
+  --color-sage: #6b7f5b;
+  --color-sage-light: #839971;
+  --color-sage-dark: #546447;
+
+  --color-khaki: #d9c9b2;
+  --color-khaki-light: #e5d9c7;
+  --color-khaki-dark: #c7b49b;
+
+  --color-terracotta: #c96f4f;
+  --color-terracotta-light: #d78466;
+  --color-terracotta-dark: #b15a3b;
+
+  --color-cream: #f8f6ee;
+  --color-cream-light: #fcfbf6;
+  --color-cream-dark: #efece0;
+
+  /* Evidentiary Secondary */
+  --color-dossier-amber: #f59e0b;
+  --color-dossier-crimson: #ef4444;
+  --color-dossier-cyan: #06b6d4;
+
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: var(--color-cream);
+  color: var(--color-pine);
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   Apple Optical Sizing Rules
+   Large display: -0.02em tracking, ~1.05 leading
+   Sub-display: -0.015em to -0.01em tracking, 1.15 to 1.25 leading
+   Body: near 0 tracking, ~1.5 leading
+   Data/Mono: -0.01em tracking, ~1.4 leading
+   ========================================================================== */
+
+.type-display-hero {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  font-variation-settings:
+    'opsz' 144,
+    'wght' 700;
+}
+
+.type-display-lg {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(1.875rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  font-variation-settings:
+    'opsz' 72,
+    'wght' 700;
+}
+
+.type-display-md {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  font-variation-settings:
+    'opsz' 36,
+    'wght' 600;
+}
+
+.type-display-sm {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  font-variation-settings:
+    'opsz' 18,
+    'wght' 600;
+}
+
+.type-body {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+.type-body-sm {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 1.5;
+}
+
+.type-data {
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+.type-data-xs {
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   Skeuomorphic Paper Grain & Textures
+   ========================================================================== */
+
+/* Manila paper subtle grain texture */
+.paper-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+/* Pressed paper debossed field inset */
+.pressed-paper-inset {
+  background-color: rgba(248, 246, 238, 0.65);
+  box-shadow:
+    inset 0 2px 4px rgba(46, 58, 47, 0.12),
+    inset 0 1px 2px rgba(46, 58, 47, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.pressed-paper-inset:focus-within,
+.pressed-paper-inset:focus {
+  background-color: rgba(252, 251, 246, 0.95);
+  box-shadow:
+    inset 0 2px 5px rgba(46, 58, 47, 0.18),
+    inset 0 1px 2px rgba(46, 58, 47, 0.1),
+    0 0 0 2px rgba(46, 58, 47, 0.35);
+}
+
+/* Rubber stamp ink distress simulation */
+.stamp-distress {
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1) 70%, rgba(0, 0, 0, 0.7) 100%);
+}
+
+/* Saddle stitched border patterns */
+.stitched-line-h {
+  background-image: linear-gradient(
+    to right,
+    var(--color-sage) 60%,
+    rgba(255, 255, 255, 0) 0%
+  );
+  background-position: bottom;
+  background-size: 8px 1.5px;
+  background-repeat: repeat-x;
+}
+
+.stitched-line-v {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-sage) 60%,
+    rgba(255, 255, 255, 0) 0%
+  );
+  background-position: right;
+  background-size: 1.5px 8px;
+  background-repeat: repeat-y;
 }
