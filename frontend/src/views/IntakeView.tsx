@@ -10,8 +10,7 @@ export const IntakeView: React.FC = () => {
 
   if (isLoading) return <RouteSkeleton title="EVIDENCE INTAKE // LOADING..." />;
 
-  const resolvedId =
-    activeCase?.id ?? (routeCaseId ? parseInt(routeCaseId, 10) : null);
+  const resolvedId = activeCase?.id ?? (routeCaseId ? parseInt(routeCaseId, 10) : null);
 
   if (!resolvedId || isNaN(resolvedId)) {
     return <RouteSkeleton title="EVIDENCE INTAKE // NO CASE SELECTED" />;

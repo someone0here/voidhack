@@ -10,8 +10,7 @@ export const BriefView: React.FC = () => {
 
   if (isLoading) return <RouteSkeleton title="BRIEF VIEWER // LOADING..." />;
 
-  const resolvedId =
-    activeCase?.id ?? (routeCaseId ? parseInt(routeCaseId, 10) : null);
+  const resolvedId = activeCase?.id ?? (routeCaseId ? parseInt(routeCaseId, 10) : null);
 
   if (!resolvedId || isNaN(resolvedId)) {
     return <RouteSkeleton title="BRIEF VIEWER // NO CASE SELECTED" />;

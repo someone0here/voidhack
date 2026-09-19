@@ -381,11 +381,22 @@ The frontend application shell implements the spatial metaphor of an investigato
 ### Client-Side Routing & State Parity
 
 Client-side routing is powered by React Router v6:
-- `/cases/:caseId/intake`: Evidence Intake workspace & dropzone (Phase 9)
-- `/cases/:caseId/correlation`: Correlation Board & entity network canvas (Phase 9)
-- `/cases/:caseId/risk`: Operational Risk Desk & heuristic scoring matrix (Phase 9)
-- `/cases/:caseId/brief`: Section 65B/BSA 63 Investigative Brief studio & PDF exporter (Phase 9)
+- `/cases/:caseId/intake`: Evidence Intake workspace & dropzone (`IntakeScreen`, Phase 9)
+- `/cases/:caseId/correlation`: Correlation Board & entity network canvas (`CorrelationBoard`, Phase 9)
+- `/cases/:caseId/risk`: Operational Risk Desk & heuristic scoring matrix (`RiskDesk`, Phase 9)
+- `/cases/:caseId/brief`: Section 65B/BSA 63 Investigative Brief studio & PDF exporter (`BriefViewer`, Phase 9)
 - `/design-system`: Field dossier component laboratory & visual QA route
 
 The shell state is managed by `CaseContext` (`useCase` hook) and backed by `frontend/src/lib/api-client.ts`, providing strict TypeScript parity with FastAPI Pydantic schemas and SQLModel entities.
+
+## Phase 9: Core Investigative Screens
+
+Each screen in `frontend/src/app/screens/` is a self-contained, single-responsibility unit that accepts only a `caseId` prop, fetches its own data, and owns its own loading/error/empty states. A thin view wrapper per screen (`frontend/src/views/`) resolves `caseId` from the route or `CaseContext` and renders a `RouteSkeleton` while that resolution is pending.
+
+- **IntakeScreen**: physical inbox-tray dropzone (`POST /cases/{case_id}/evidence`) with a momentum-style spring on dragover; each file renders as a `FolderCard` document chip carrying its detected `source_type` and a `StampBadge` ingestion status (pending/uploading/processed/failed). Failed ingestions surface the backend's `IngestionError` detail verbatim.
+- **CorrelationBoard**: `GET /cases/{case_id}/graph` rendered as a `d3-force` physics layout on an SVG cork board — edge rest length shortens with confidence — with pinned `FolderCard`-style nodes. Node drag uses Pointer Events + `setPointerCapture` for exact 1:1 offset tracking from the grab point; click opens a detail popover anchored to the node's own screen position.
+- **RiskDesk**: `GET /cases/{case_id}/risk` rendered as ranked case-folder cards with a stamped risk score, masked identifier, and an always-visible investigator recommendation (never gated behind a click). Sort/filter controls are physical toggle tabs and pills, not native `<select>` elements.
+- **BriefViewer**: `GET /cases/{case_id}/brief.json` and `GET /cases/{case_id}/integrity` rendered as a printed-document preview with a wax-seal custody-chain indicator (intact/broken), plus a PDF export button hitting `GET /cases/{case_id}/brief.pdf` for a real file download.
+
+`frontend/src/lib/api-client.ts` is the typed fetch wrapper all four screens (and `CaseContext`) depend on. It mirrors every backend Pydantic schema referenced by the `/cases` API surface above, and its `ApiError` class normalizes all three backend error-body shapes: `IngestionError`/`ValueError` 400s (`{error, detail, request_id}`), plain `HTTPException` responses (`{detail}`), and FastAPI's 422 validation arrays (`{detail: [{msg, ...}]}`).
 

@@ -14,11 +14,7 @@ import {
   defaultSpringTransition,
   reducedMotionTransition,
 } from '../../design-system/motion';
-import {
-  apiClient,
-  BriefExport,
-  ChainVerificationResult,
-} from '../../lib/api-client';
+import { apiClient, BriefExport, ChainVerificationResult } from '../../lib/api-client';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -171,7 +167,11 @@ const BriefSkeleton: React.FC = () => (
         </div>
         <div className="space-y-3 p-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-3 animate-pulse rounded bg-pine/5" style={{ width: `${75 + (i % 3) * 10}%` }} />
+            <div
+              key={i}
+              className="h-3 animate-pulse rounded bg-pine/5"
+              style={{ width: `${75 + (i % 3) * 10}%` }}
+            />
           ))}
           <div className="h-3 w-1/2 animate-pulse rounded bg-pine/5" />
         </div>
@@ -231,7 +231,7 @@ const PrintedBrief: React.FC<{
         </p>
         {/* Classification stamp */}
         <div className="mt-3 flex justify-center">
-          <span className="rounded border border-terracotta/40 bg-terracotta/8 px-3 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-terracotta-dark">
+          <span className="bg-terracotta/8 rounded border border-terracotta/40 px-3 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-terracotta-dark">
             {brief.classification}
           </span>
         </div>
@@ -243,7 +243,11 @@ const PrintedBrief: React.FC<{
         <section className="mb-6">
           <h2
             className="mb-3 text-sm font-semibold uppercase tracking-wider text-pine/70"
-            style={{ fontFamily: 'Fraunces, Georgia, serif', borderBottom: '1px solid #2E3A2F20', paddingBottom: 6 }}
+            style={{
+              fontFamily: 'Fraunces, Georgia, serif',
+              borderBottom: '1px solid #2E3A2F20',
+              paddingBottom: 6,
+            }}
           >
             I. Case Overview
           </h2>
@@ -271,7 +275,11 @@ const PrintedBrief: React.FC<{
         <section className="mb-6">
           <h2
             className="mb-3 text-sm font-semibold uppercase tracking-wider text-pine/70"
-            style={{ fontFamily: 'Fraunces, Georgia, serif', borderBottom: '1px solid #2E3A2F20', paddingBottom: 6 }}
+            style={{
+              fontFamily: 'Fraunces, Georgia, serif',
+              borderBottom: '1px solid #2E3A2F20',
+              paddingBottom: 6,
+            }}
           >
             II. Custody Chain Integrity
           </h2>
@@ -304,7 +312,11 @@ const PrintedBrief: React.FC<{
           <section className="mb-6">
             <h2
               className="mb-3 text-sm font-semibold uppercase tracking-wider text-pine/70"
-              style={{ fontFamily: 'Fraunces, Georgia, serif', borderBottom: '1px solid #2E3A2F20', paddingBottom: 6 }}
+              style={{
+                fontFamily: 'Fraunces, Georgia, serif',
+                borderBottom: '1px solid #2E3A2F20',
+                paddingBottom: 6,
+              }}
             >
               III. Priority Entities
             </h2>
@@ -331,7 +343,9 @@ const PrintedBrief: React.FC<{
                     <tr
                       key={e.entity_id}
                       className="border-b border-pine/5 last:border-0"
-                      style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(217,201,178,0.2)' }}
+                      style={{
+                        background: i % 2 === 0 ? 'transparent' : 'rgba(217,201,178,0.2)',
+                      }}
                     >
                       <td className="px-3 py-2 font-mono text-[10px] text-pine/50">
                         {i + 1}
@@ -376,7 +390,11 @@ const PrintedBrief: React.FC<{
           <section className="mb-6">
             <h2
               className="mb-3 text-sm font-semibold uppercase tracking-wider text-pine/70"
-              style={{ fontFamily: 'Fraunces, Georgia, serif', borderBottom: '1px solid #2E3A2F20', paddingBottom: 6 }}
+              style={{
+                fontFamily: 'Fraunces, Georgia, serif',
+                borderBottom: '1px solid #2E3A2F20',
+                paddingBottom: 6,
+              }}
             >
               IV. Network Clusters
             </h2>
@@ -408,10 +426,11 @@ const PrintedBrief: React.FC<{
         {/* Footer disclaimer */}
         <div className="border-t border-pine/10 pt-4">
           <p className="font-mono text-[9px] leading-relaxed text-pine/40">
-            This brief is generated automatically for investigator reference and is not a substitute
-            for judicial determination. All recommendations are non-directive and require human
-            review. PII has been partially masked per operational security protocol. Produced under
-            Section 65B Indian Evidence Act / Section 63 Bharatiya Sakshya Adhiniyam 2023.
+            This brief is generated automatically for investigator reference and is not a
+            substitute for judicial determination. All recommendations are non-directive
+            and require human review. PII has been partially masked per operational
+            security protocol. Produced under Section 65B Indian Evidence Act / Section 63
+            Bharatiya Sakshya Adhiniyam 2023.
           </p>
         </div>
       </div>
@@ -445,7 +464,8 @@ export const BriefViewer: React.FC<BriefViewerProps> = ({ caseId }) => {
         }
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load brief');
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : 'Failed to load brief');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -501,19 +521,24 @@ export const BriefViewer: React.FC<BriefViewerProps> = ({ caseId }) => {
           <div>
             <h2 className="type-display-lg text-pine">Court-Ready Investigative Brief</h2>
             <p className="type-body mt-1 text-pine/80">
-              Automated one-page evidentiary brief with Section 65B IEA / Section 63 BSA 2023
-              cryptographic chain verification.
+              Automated one-page evidentiary brief with Section 65B IEA / Section 63 BSA
+              2023 cryptographic chain verification.
             </p>
           </div>
           <StampBadge
             label="CLASSIFIED BRIEF"
             variant="pine"
             rotation={-2}
-            subtext={integrity ? (integrity.is_valid ? 'CHAIN VERIFIED' : 'CHAIN BROKEN') : '…'}
+            subtext={
+              integrity ? (integrity.is_valid ? 'CHAIN VERIFIED' : 'CHAIN BROKEN') : '…'
+            }
           />
         </div>
 
-        <StitchedDivider orientation="horizontal" label="LEGAL INTEGRITY & STATUTORY COMPLIANCE" />
+        <StitchedDivider
+          orientation="horizontal"
+          label="LEGAL INTEGRITY & STATUTORY COMPLIANCE"
+        />
 
         {/* Action bar */}
         <div className="flex items-center justify-between rounded-xl border border-pine/15 bg-khaki-light/40 px-4 py-3">
@@ -565,7 +590,9 @@ export const BriefViewer: React.FC<BriefViewerProps> = ({ caseId }) => {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition}
+            transition={
+              shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition
+            }
           >
             <PrintedBrief brief={brief} integrity={integrity} />
           </motion.div>

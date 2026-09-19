@@ -19,7 +19,7 @@ import { apiClient, RankedEntityRiskRead } from '../../lib/api-client';
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type SortKey = 'score' | 'type';
-type EntityTypeFilter = string | 'all';
+type EntityTypeFilter = string;
 
 interface RiskDeskProps {
   caseId: number;
@@ -46,7 +46,8 @@ const REASON_PLAIN: Record<string, string> = {
   MULE_ACCOUNT_STRUCTURE:
     'Transaction pattern consistent with mule layering — small inbound bursts, rapid outbound transfers',
   FLAGGED_IP_NEXUS: 'IP address overlaps with a cluster of high-risk entities',
-  CROSS_CASE_ENTITY: 'Entity appears across multiple cases — indicates organised network activity',
+  CROSS_CASE_ENTITY:
+    'Entity appears across multiple cases — indicates organised network activity',
   SUSPICIOUS_UPI_CHURN:
     'UPI handle linked to abnormal churn: high volume of small-value transactions over short span',
 };
@@ -264,13 +265,15 @@ const EntityRiskCard: React.FC<{
           >
             <motion.span
               animate={{ rotate: expanded ? 90 : 0 }}
-              transition={shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition}
+              transition={
+                shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition
+              }
               className="inline-block"
             >
               ▶
             </motion.span>
-            {entity.reason_codes.length} reason{entity.reason_codes.length !== 1 ? 's' : ''}{' '}
-            triggered
+            {entity.reason_codes.length} reason
+            {entity.reason_codes.length !== 1 ? 's' : ''} triggered
           </button>
 
           <AnimatePresence>
@@ -279,7 +282,9 @@ const EntityRiskCard: React.FC<{
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition}
+                transition={
+                  shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition
+                }
                 className="overflow-hidden"
               >
                 <div className="mt-2 space-y-1.5 border-t border-pine/10 pt-2">
@@ -330,7 +335,8 @@ export const RiskDesk: React.FC<RiskDeskProps> = ({ caseId }) => {
         if (!cancelled) setEntities(data);
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load risk data');
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : 'Failed to load risk data');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -431,11 +437,7 @@ export const RiskDesk: React.FC<RiskDeskProps> = ({ caseId }) => {
           <motion.div layout className="space-y-3">
             <AnimatePresence mode="popLayout">
               {filtered.map((entity, i) => (
-                <EntityRiskCard
-                  key={entity.entity_id}
-                  entity={entity}
-                  rank={i + 1}
-                />
+                <EntityRiskCard key={entity.entity_id} entity={entity} rank={i + 1} />
               ))}
             </AnimatePresence>
           </motion.div>

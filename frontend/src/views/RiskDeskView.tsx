@@ -10,8 +10,7 @@ export const RiskDeskView: React.FC = () => {
 
   if (isLoading) return <RouteSkeleton title="RISK DESK // LOADING..." />;
 
-  const resolvedId =
-    activeCase?.id ?? (routeCaseId ? parseInt(routeCaseId, 10) : null);
+  const resolvedId = activeCase?.id ?? (routeCaseId ? parseInt(routeCaseId, 10) : null);
 
   if (!resolvedId || isNaN(resolvedId)) {
     return <RouteSkeleton title="RISK DESK // NO CASE SELECTED" />;

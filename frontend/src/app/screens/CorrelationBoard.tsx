@@ -8,13 +8,7 @@
  * node's screen position (not screen centre).
  */
 
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  useMemo,
-} from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3Force from 'd3-force';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { FolderCard, StampBadge, StitchedDivider } from '../../design-system';
@@ -22,7 +16,12 @@ import {
   defaultSpringTransition,
   reducedMotionTransition,
 } from '../../design-system/motion';
-import { apiClient, SerializedGraph, SerializedNode, SerializedEdge } from '../../lib/api-client';
+import {
+  apiClient,
+  SerializedGraph,
+  SerializedNode,
+  SerializedEdge,
+} from '../../lib/api-client';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -54,13 +53,13 @@ const ENTITY_ICONS: Record<string, string> = {
 };
 
 const LINK_TYPE_COLORS: Record<string, string> = {
-  shared_imei: '#06B6D4',      // cyan — device
+  shared_imei: '#06B6D4', // cyan — device
   shared_upi_handle: '#C96F4F', // terracotta — financial
-  shared_mac: '#F59E0B',        // amber — hardware
-  shared_ip_subnet: '#6B7F5B',  // sage — network
-  co_occurrence: '#94A3B8',     // muted — co-occurrence
+  shared_mac: '#F59E0B', // amber — hardware
+  shared_ip_subnet: '#6B7F5B', // sage — network
+  co_occurrence: '#94A3B8', // muted — co-occurrence
   direct_communication: '#C96F4F', // terracotta — comms
-  transaction: '#C96F4F',       // terracotta — money
+  transaction: '#C96F4F', // terracotta — money
 };
 
 const CONFIDENCE_STROKE: Record<string, number> = {
@@ -76,21 +75,6 @@ function maskValue(value: string): string {
   const prefix = value.slice(0, Math.min(3, value.length - 4));
   const middle = '•'.repeat(Math.max(0, value.length - prefix.length - 4));
   return `${prefix}${middle}${suffix}`;
-}
-
-/** Convert SVG-space point to screen coords */
-function svgToScreen(
-  svg: SVGSVGElement,
-  x: number,
-  y: number,
-  transform: DOMMatrix,
-): { screenX: number; screenY: number } {
-  const pt = svg.createSVGPoint();
-  pt.x = x;
-  pt.y = y;
-  const screenPt = pt.matrixTransform(transform);
-  const rect = svg.getBoundingClientRect();
-  return { screenX: screenPt.x + rect.left, screenY: screenPt.y + rect.top };
 }
 
 // ── Loading Skeleton ───────────────────────────────────────────────────────────
@@ -160,7 +144,12 @@ interface NodeCardProps {
   onClick: (e: React.MouseEvent, node: NodeState) => void;
 }
 
-const NodeCard: React.FC<NodeCardProps> = ({ node, isSelected, onPointerDown, onClick }) => {
+const NodeCard: React.FC<NodeCardProps> = ({
+  node,
+  isSelected,
+  onPointerDown,
+  onClick,
+}) => {
   const icon = ENTITY_ICONS[node.entity_type] ?? '🔍';
   const masked = maskValue(node.value);
 
@@ -230,8 +219,25 @@ const NodeCard: React.FC<NodeCardProps> = ({ node, isSelected, onPointerDown, on
         <rect x={28} y={24} width={NODE_W - 34} height={18} />
       </clipPath>
       {/* Cluster ID dot */}
-      <circle cx={NODE_W - 8} cy={NODE_H - 8} r={4} fill="#D9C9B2" stroke="#2E3A2F" strokeOpacity={0.2} strokeWidth={0.5} />
-      <text x={NODE_W - 8} y={NODE_H - 8} fontSize={5} fontFamily="monospace" fill="#2E3A2F" fillOpacity={0.6} textAnchor="middle" dominantBaseline="middle">
+      <circle
+        cx={NODE_W - 8}
+        cy={NODE_H - 8}
+        r={4}
+        fill="#D9C9B2"
+        stroke="#2E3A2F"
+        strokeOpacity={0.2}
+        strokeWidth={0.5}
+      />
+      <text
+        x={NODE_W - 8}
+        y={NODE_H - 8}
+        fontSize={5}
+        fontFamily="monospace"
+        fill="#2E3A2F"
+        fillOpacity={0.6}
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
         {node.cluster_id}
       </text>
     </g>
@@ -270,16 +276,14 @@ const NodePopover: React.FC<PopoverProps> = ({
   return (
     <>
       {/* Backdrop close */}
-      <div
-        className="fixed inset-0 z-40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden="true" />
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        transition={shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition}
+        transition={
+          shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition
+        }
         style={{
           position: 'fixed',
           left: screenX + 12,
@@ -299,7 +303,9 @@ const NodePopover: React.FC<PopoverProps> = ({
                 <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-pine/60">
                   {node.entity_type.replace(/_/g, ' ')}
                 </p>
-                <p className="font-mono text-xs font-semibold text-pine">{maskValue(node.value)}</p>
+                <p className="font-mono text-xs font-semibold text-pine">
+                  {maskValue(node.value)}
+                </p>
               </div>
             </div>
             <button
@@ -360,7 +366,6 @@ const NodePopover: React.FC<PopoverProps> = ({
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) => {
-  const shouldReduceMotion = useReducedMotion();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -370,7 +375,9 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
 
   // Live node positions (mutable ref for d3, synced to state for render)
   const [nodes, setNodes] = useState<NodeState[]>([]);
-  const simulationRef = useRef<d3Force.Simulation<NodeState, SerializedEdge> | null>(null);
+  const simulationRef = useRef<d3Force.Simulation<NodeState, SerializedEdge> | null>(
+    null,
+  );
   const tickCount = useRef(0);
   const animFrameRef = useRef<number>(0);
 
@@ -400,7 +407,9 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
 
   // Selected node popover
   const [selectedNode, setSelectedNode] = useState<NodeState | null>(null);
-  const [popoverScreen, setPopoverScreen] = useState<{ x: number; y: number } | null>(null);
+  const [popoverScreen, setPopoverScreen] = useState<{ x: number; y: number } | null>(
+    null,
+  );
 
   // ── Fetch graph ──────────────────────────────────────────────────────────────
 
@@ -489,37 +498,34 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
 
   // ── Pointer Events — Node Drag ────────────────────────────────────────────────
 
-  const handleNodePointerDown = useCallback(
-    (e: React.PointerEvent, nodeId: number) => {
-      e.stopPropagation();
-      (e.currentTarget as SVGElement).setPointerCapture(e.pointerId);
+  const handleNodePointerDown = useCallback((e: React.PointerEvent, nodeId: number) => {
+    e.stopPropagation();
+    (e.currentTarget as SVGElement).setPointerCapture(e.pointerId);
 
-      const node = simulationRef.current?.nodes().find((n) => n.id === nodeId);
-      if (!node) return;
+    const node = simulationRef.current?.nodes().find((n) => n.id === nodeId);
+    if (!node) return;
 
-      // Compute exact grab offset in SVG-space
-      const svg = svgRef.current;
-      if (!svg) return;
-      const rect = svg.getBoundingClientRect();
-      const svgX = (e.clientX - rect.left - vpRef.current.tx) / vpRef.current.scale;
-      const svgY = (e.clientY - rect.top - vpRef.current.ty) / vpRef.current.scale;
+    // Compute exact grab offset in SVG-space
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const svgX = (e.clientX - rect.left - vpRef.current.tx) / vpRef.current.scale;
+    const svgY = (e.clientY - rect.top - vpRef.current.ty) / vpRef.current.scale;
 
-      dragRef.current = {
-        nodeId,
-        pointerId: e.pointerId,
-        startClientX: e.clientX,
-        startClientY: e.clientY,
-        startNodeX: node.x,
-        startNodeY: node.y,
-      };
+    dragRef.current = {
+      nodeId,
+      pointerId: e.pointerId,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startNodeX: node.x,
+      startNodeY: node.y,
+    };
 
-      // Fix node position so d3 doesn't fight us
-      node.fx = svgX;
-      node.fy = svgY;
-      simulationRef.current?.alphaTarget(0.15).restart();
-    },
-    [],
-  );
+    // Fix node position so d3 doesn't fight us
+    node.fx = svgX;
+    node.fy = svgY;
+    simulationRef.current?.alphaTarget(0.15).restart();
+  }, []);
 
   const handleSvgPointerMove = useCallback((e: React.PointerEvent) => {
     const svg = svgRef.current;
@@ -531,7 +537,9 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
       const svgX = (e.clientX - rect.left - vpRef.current.tx) / vpRef.current.scale;
       const svgY = (e.clientY - rect.top - vpRef.current.ty) / vpRef.current.scale;
 
-      const node = simulationRef.current?.nodes().find((n) => n.id === dragRef.current!.nodeId);
+      const node = simulationRef.current
+        ?.nodes()
+        .find((n) => n.id === dragRef.current!.nodeId);
       if (node) {
         node.fx = svgX;
         node.fy = svgY;
@@ -552,7 +560,9 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
 
   const handleSvgPointerUp = useCallback((e: React.PointerEvent) => {
     if (dragRef.current && dragRef.current.pointerId === e.pointerId) {
-      const node = simulationRef.current?.nodes().find((n) => n.id === dragRef.current!.nodeId);
+      const node = simulationRef.current
+        ?.nodes()
+        .find((n) => n.id === dragRef.current!.nodeId);
       if (node) {
         // Release fix — spring-settle
         node.fx = null;
@@ -666,10 +676,18 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
               and direct communication channels across disparate evidentiary streams.
             </p>
           </div>
-          <StampBadge label="LINKAGE MATRIX" variant="sage" rotation={2} subtext="LIVE GRAPH" />
+          <StampBadge
+            label="LINKAGE MATRIX"
+            variant="sage"
+            rotation={2}
+            subtext="LIVE GRAPH"
+          />
         </div>
 
-        <StitchedDivider orientation="horizontal" label="CONFIDENCE SIGNAL SPECIFICATION" />
+        <StitchedDivider
+          orientation="horizontal"
+          label="CONFIDENCE SIGNAL SPECIFICATION"
+        />
 
         {/* Legend */}
         <div className="flex flex-wrap gap-3">
@@ -690,7 +708,9 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="font-mono text-[10px] font-semibold text-pine/60">{item.label}</span>
+              <span className="font-mono text-[10px] font-semibold text-pine/60">
+                {item.label}
+              </span>
             </div>
           ))}
           <div className="ml-auto flex items-center gap-1.5">
@@ -730,7 +750,9 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
                 </filter>
               </defs>
 
-              <g transform={`translate(${viewport.tx},${viewport.ty}) scale(${viewport.scale})`}>
+              <g
+                transform={`translate(${viewport.tx},${viewport.ty}) scale(${viewport.scale})`}
+              >
                 {/* Edges (strings) */}
                 <g>
                   {edges.map((edge) => {

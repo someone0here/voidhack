@@ -16,11 +16,7 @@ import {
   defaultSpringTransition,
   reducedMotionTransition,
 } from '../../design-system/motion';
-import {
-  apiClient,
-  SourceType,
-  ApiError,
-} from '../../lib/api-client';
+import { apiClient, SourceType, ApiError } from '../../lib/api-client';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -52,7 +48,8 @@ const SOURCE_TYPE_OPTIONS: { value: SourceType; label: string; icon: string }[] 
 
 function detectSourceType(file: File): SourceType {
   const name = file.name.toLowerCase();
-  if (name.endsWith('.eml') || name.includes('email') || name.includes('mail')) return 'email';
+  if (name.endsWith('.eml') || name.includes('email') || name.includes('mail'))
+    return 'email';
   if (
     name.includes('bank') ||
     name.includes('upi') ||
@@ -136,7 +133,9 @@ const FileChip: React.FC<{
           >
             {item.file.name}
           </p>
-          <p className="font-mono text-[10px] text-pine/50">{formatBytes(item.file.size)}</p>
+          <p className="font-mono text-[10px] text-pine/50">
+            {formatBytes(item.file.size)}
+          </p>
         </div>
         <StampBadge
           label={cfg.label}
@@ -214,7 +213,7 @@ const FileChip: React.FC<{
 
       {/* Error detail — verbatim from backend IngestionError */}
       {item.status === 'failed' && item.errorDetail && (
-        <div className="rounded border border-terracotta/30 bg-terracotta/8 p-2">
+        <div className="bg-terracotta/8 rounded border border-terracotta/30 p-2">
           <p className="font-mono text-[10px] leading-snug text-terracotta-dark">
             ⚠ {item.errorDetail}
           </p>
@@ -407,7 +406,10 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ caseId }) => {
           />
         </div>
 
-        <StitchedDivider orientation="horizontal" label="ARTIFACT DROPZONE // DRAG TO INGEST" />
+        <StitchedDivider
+          orientation="horizontal"
+          label="ARTIFACT DROPZONE // DRAG TO INGEST"
+        />
 
         {/* Physical Inbox Tray */}
         <motion.div
@@ -417,11 +419,11 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ caseId }) => {
         >
           {/* Tray outer rim — the raised physical edge */}
           <div
-            className="pointer-events-none absolute -bottom-2 inset-x-0 h-3 rounded-b-xl bg-khaki-dark"
+            className="pointer-events-none absolute inset-x-0 -bottom-2 h-3 rounded-b-xl bg-khaki-dark"
             aria-hidden="true"
           />
           <div
-            className="pointer-events-none absolute -bottom-1 inset-x-1 h-2 rounded-b-xl bg-khaki-dark/70"
+            className="pointer-events-none absolute inset-x-1 -bottom-1 h-2 rounded-b-xl bg-khaki-dark/70"
             aria-hidden="true"
           />
 
@@ -522,10 +524,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ caseId }) => {
               orientation="horizontal"
               label={`INGESTED ARTIFACTS (${files.length})`}
             />
-            <motion.div
-              layout
-              className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-            >
+            <motion.div layout className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <AnimatePresence>
                 {files.map((item) => (
                   <FileChip
