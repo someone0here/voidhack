@@ -70,9 +70,28 @@ export const EmptyCaseFolder: React.FC<EmptyCaseFolderProps> = ({
         <motion.div
           animate={isOpen ? { scale: 1.02, rotate: 0 } : { scale: 1, rotate: 0 }}
           whileHover={!isOpen ? { scale: 1.015, y: -2 } : undefined}
+          whileTap={
+            !isOpen
+              ? shouldReduceMotion
+                ? { opacity: 0.9 }
+                : { scale: 0.995 }
+              : undefined
+          }
           transition={shouldReduceMotion ? reducedMotionTransition : springTransition}
           onClick={!isOpen ? handleOpenFolder : undefined}
-          className={`relative cursor-pointer transition-shadow ${!isOpen ? 'cursor-pointer' : 'cursor-default'}`}
+          role={!isOpen ? 'button' : undefined}
+          tabIndex={!isOpen ? 0 : undefined}
+          onKeyDown={
+            !isOpen
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleOpenFolder();
+                  }
+                }
+              : undefined
+          }
+          className={`relative cursor-pointer transition-shadow ${!isOpen ? 'cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2 focus-visible:ring-offset-cream' : 'cursor-default'}`}
         >
           <FolderCard
             tabTitle="EVIDENTIARY ARCHIVE"

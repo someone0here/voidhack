@@ -67,7 +67,7 @@ export const CaseRoomSidebar: React.FC<CaseRoomSidebarProps> = ({
                 type="button"
                 onClick={() => handleTabClick(tab)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`group relative flex w-full items-center justify-between rounded-l-xl border-y border-l px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine ${
+                className={`group relative flex w-full items-center justify-between rounded-l-xl border-y border-l px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta ${
                   isActive
                     ? 'z-30 border-pine/25 bg-khaki text-pine shadow-[0_2px_8px_rgba(46,58,47,0.08)]'
                     : 'z-10 border-pine/15 bg-khaki-dark/40 text-pine/70 hover:bg-khaki-light/60 hover:text-pine'

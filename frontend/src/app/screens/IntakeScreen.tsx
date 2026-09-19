@@ -8,7 +8,7 @@
  * detail verbatim — never a generic "upload failed."
  */
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { FolderCard, StampBadge, StitchedDivider } from '../../design-system';
 import {
@@ -16,7 +16,9 @@ import {
   defaultSpringTransition,
   reducedMotionTransition,
 } from '../../design-system/motion';
-import { apiClient, SourceType, ApiError } from '../../lib/api-client';
+import { SourceType, ApiError } from '../../lib/api-client';
+import { useEvidence } from '../../hooks/useEvidence';
+import { notifySuccess } from '../../lib/toast';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -100,6 +102,31 @@ const FileChip: React.FC<{
 }> = ({ item, onSourceTypeChange }) => {
   const shouldReduceMotion = useReducedMotion();
   const [showTypeMenu, setShowTypeMenu] = useState(false);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
+
+  // The dropdown previously had no outside-click and no Escape handler — the
+  // only way to dismiss it was picking an option, and it also ignored
+  // reduced-motion on its own transition (fixed below).
+  useEffect(() => {
+    if (!showTypeMenu) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (
+        menuContainerRef.current &&
+        !menuContainerRef.current.contains(e.target as Node)
+      ) {
+        setShowTypeMenu(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowTypeMenu(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showTypeMenu]);
 
   const statusConfig: Record<
     IngestionStatus,
@@ -147,11 +174,12 @@ const FileChip: React.FC<{
       </div>
 
       {/* Source type selector */}
-      <div className="relative">
+      <div className="relative" ref={menuContainerRef}>
         <button
           onClick={() => setShowTypeMenu((v) => !v)}
           disabled={item.status === 'uploading' || item.status === 'processed'}
-          className="flex items-center gap-1.5 rounded border border-pine/20 bg-khaki-light/60 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-pine transition-colors hover:bg-khaki disabled:cursor-not-allowed disabled:opacity-60"
+          aria-expanded={showTypeMenu}
+          className="flex items-center gap-1.5 rounded border border-pine/20 bg-khaki-light/60 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-pine transition-colors hover:bg-khaki focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span>{sourceInfo?.icon}</span>
           <span>{sourceInfo?.label ?? item.sourceType}</span>
@@ -172,7 +200,9 @@ const FileChip: React.FC<{
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              transition={defaultSpringTransition}
+              transition={
+                shouldReduceMotion ? reducedMotionTransition : defaultSpringTransition
+              }
               className="absolute left-0 top-full z-30 mt-1 min-w-[140px] rounded-lg border border-pine/20 bg-cream shadow-paper"
             >
               {SOURCE_TYPE_OPTIONS.map((opt) => (
@@ -182,7 +212,7 @@ const FileChip: React.FC<{
                     onSourceTypeChange(item.id, opt.value);
                     setShowTypeMenu(false);
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-pine transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-khaki-light"
+                  className="flex w-full items-center gap-2 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-pine transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-khaki-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-terracotta"
                 >
                   <span>{opt.icon}</span>
                   <span>{opt.label}</span>
@@ -280,6 +310,14 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ caseId }) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const dragCounter = useRef(0);
 
+  // Upload mutation: on success, invalidates the graph/risk/integrity/brief
+  // queries for this case (see `hooks/useEvidence.ts`) so the other three
+  // screens pick up new evidence automatically. The chip's own
+  // pending → uploading → processed/failed lifecycle below is local,
+  // optimistic UI — the chip appears the instant a file is dropped, well
+  // before this mutation resolves, which matters for the "golden hour" demo.
+  const evidenceMutation = useEvidence(caseId);
+
   // Build a stable upload function
   const uploadFile = useCallback(
     async (uploadItem: UploadedFile) => {
@@ -288,11 +326,10 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ caseId }) => {
       );
 
       try {
-        const result = await apiClient.cases.uploadEvidence(
-          caseId,
-          uploadItem.file,
-          uploadItem.sourceType,
-        );
+        const result = await evidenceMutation.mutateAsync({
+          file: uploadItem.file,
+          sourceType: uploadItem.sourceType,
+        });
         setFiles((prev) =>
           prev.map((f) =>
             f.id === uploadItem.id
@@ -304,6 +341,10 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ caseId }) => {
                 }
               : f,
           ),
+        );
+        notifySuccess(
+          `${uploadItem.file.name} ingested`,
+          `${result.rows_processed} rows · ${result.entities_created} entities extracted`,
         );
       } catch (err: unknown) {
         const detail =
@@ -319,7 +360,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ caseId }) => {
         );
       }
     },
-    [caseId],
+    [evidenceMutation],
   );
 
   const enqueueFiles = useCallback(

@@ -18,7 +18,8 @@
 
   --color-terracotta: #c96f4f;
   --color-terracotta-light: #d78466;
-  --color-terracotta-dark: #b15a3b;
+  /* Darkened for WCAG AA text contrast — see tailwind.config.ts terracotta.dark */
+  --color-terracotta-dark: #84432c;
 
   --color-cream: #f8f6ee;
   --color-cream-light: #fcfbf6;

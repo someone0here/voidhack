@@ -97,13 +97,37 @@ export const FolderCard: React.FC<FolderCardProps> = ({
                 : defaultSpringTransition,
             }
           : undefined,
+        // Feedback was hover-only, so clickable cards never responded on
+        // pointer-down — only on release, which reads as dead per the
+        // response principle. whileTap fires on the tap/press gesture start.
+        whileTap: onClick
+          ? shouldReduceMotion
+            ? { opacity: 0.85 }
+            : { scale: 0.985, y: 0 }
+          : undefined,
       };
+
+  // Clickable cards had no keyboard path at all (no tabIndex/role/onKeyDown),
+  // so keyboard-only users couldn't activate them.
+  const interactiveProps = onClick
+    ? {
+        role: 'button' as const,
+        tabIndex: 0,
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        },
+      }
+    : {};
 
   return (
     <motion.div
       {...motionProps}
+      {...interactiveProps}
       onClick={onClick}
-      className={`group relative flex flex-col ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''} ${className}`}
+      className={`group relative flex flex-col ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''} ${onClick ? 'cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2 focus-visible:ring-offset-cream' : ''} ${className}`}
     >
       {/* Die-cut Manila Folder Tab */}
       {tabTitle && (

@@ -15,13 +15,10 @@ import { FolderCard, StampBadge, StitchedDivider } from '../../design-system';
 import {
   defaultSpringTransition,
   reducedMotionTransition,
+  rubberBandClamp,
 } from '../../design-system/motion';
-import {
-  apiClient,
-  SerializedGraph,
-  SerializedNode,
-  SerializedEdge,
-} from '../../lib/api-client';
+import { SerializedNode, SerializedEdge } from '../../lib/api-client';
+import { useGraph } from '../../hooks/useGraph';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -42,6 +39,14 @@ interface CorrelationBoardProps {
 
 const NODE_W = 112;
 const NODE_H = 52;
+
+// Zoom bounds. Past these, the wheel handler compresses the delta with the
+// same rubber-band formula used for drag bounds instead of hard-clamping —
+// per the apple-design skill, a hard stop at a boundary reads as "frozen";
+// progressive resistance reads as "responsive, but there's nothing more here."
+const ZOOM_MIN = 0.3;
+const ZOOM_MAX = 4;
+const ZOOM_ELASTIC_RANGE = 0.6;
 
 const ENTITY_ICONS: Record<string, string> = {
   phone: '📞',
@@ -141,7 +146,7 @@ interface NodeCardProps {
   node: NodeState;
   isSelected: boolean;
   onPointerDown: (e: React.PointerEvent, nodeId: number) => void;
-  onClick: (e: React.MouseEvent, node: NodeState) => void;
+  onClick: (e: React.SyntheticEvent, node: NodeState) => void;
 }
 
 const NodeCard: React.FC<NodeCardProps> = ({
@@ -159,6 +164,18 @@ const NodeCard: React.FC<NodeCardProps> = ({
       style={{ cursor: 'grab' }}
       onPointerDown={(e) => onPointerDown(e, node.id)}
       onClick={(e) => onClick(e, node)}
+      // Nodes were mouse/pointer-only — a screen-reader/keyboard user had no
+      // way to reach or open a node's detail popover at all.
+      role="button"
+      tabIndex={0}
+      aria-label={`${node.entity_type.replace(/_/g, ' ')} ${masked}, cluster ${node.cluster_id}. Press Enter to view connections.`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick(e, node);
+        }
+      }}
+      className="outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
     >
       {/* Push-pin dot */}
       <circle
@@ -369,9 +386,10 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [graph, setGraph] = useState<SerializedGraph | null>(null);
+  const graphQuery = useGraph(caseId);
+  const graph = graphQuery.data ?? null;
+  const loading = graphQuery.isPending;
+  const error = graphQuery.error ? graphQuery.error.message : null;
 
   // Live node positions (mutable ref for d3, synced to state for render)
   const [nodes, setNodes] = useState<NodeState[]>([]);
@@ -405,35 +423,17 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
     startTy: number;
   } | null>(null);
 
-  // Selected node popover
-  const [selectedNode, setSelectedNode] = useState<NodeState | null>(null);
-  const [popoverScreen, setPopoverScreen] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  // Selected node popover. Only the *id* is state — screen position is
+  // derived live from the node's current x/y and the current viewport on
+  // every render (see `popoverScreen` below), so the popover tracks the node
+  // through simulation ticks, drags, and pan/zoom instead of freezing at the
+  // coordinates captured the instant it was opened.
+  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
 
-  // ── Fetch graph ──────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    apiClient.cases
-      .getGraph(caseId)
-      .then((g) => {
-        if (!cancelled) setGraph(g);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load graph');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [caseId]);
+  // Graph fetching now lives in `useGraph` (TanStack Query) above — it is
+  // invalidated automatically by `useEvidence`'s upload mutation, so a new
+  // ingestion on the Intake screen refetches this graph without a manual
+  // page refresh.
 
   // ── Build d3 simulation ──────────────────────────────────────────────────────
 
@@ -592,46 +592,111 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
 
   // ── Scroll zoom ───────────────────────────────────────────────────────────────
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    const svg = svgRef.current;
-    if (!svg) return;
-    const rect = svg.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+  const zoomSettleFrame = useRef<number>(0);
+  const zoomSettleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    setViewport((prev) => {
-      const newScale = Math.max(0.3, Math.min(4, prev.scale * factor));
-      const scaleRatio = newScale / prev.scale;
-      const newTx = mouseX - (mouseX - prev.tx) * scaleRatio;
-      const newTy = mouseY - (mouseY - prev.ty) * scaleRatio;
-      return { tx: newTx, ty: newTy, scale: newScale };
-    });
+  // After the wheel goes idle, spring any out-of-bounds scale back to its
+  // nearest bound — the rubber-band overshoot during the gesture is only
+  // half the effect; the boundary is soft, not absent.
+  const settleZoomToBounds = useCallback(() => {
+    const startScale = vpRef.current.scale;
+    const target = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, startScale));
+    if (target === startScale) return;
+
+    const startTime = performance.now();
+    const duration = 220;
+    cancelAnimationFrame(zoomSettleFrame.current);
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic settle
+      const scale = startScale + (target - startScale) * eased;
+      setViewport((prev) => ({ ...prev, scale }));
+      if (t < 1) {
+        zoomSettleFrame.current = requestAnimationFrame(step);
+      }
+    };
+    zoomSettleFrame.current = requestAnimationFrame(step);
   }, []);
+
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(zoomSettleFrame.current);
+      if (zoomSettleTimer.current) clearTimeout(zoomSettleTimer.current);
+    },
+    [],
+  );
+
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+      // A new gesture always wins over a pending settle — grabbing the zoom
+      // again mid-settle should resume from the live value, not fight it.
+      cancelAnimationFrame(zoomSettleFrame.current);
+      if (zoomSettleTimer.current) clearTimeout(zoomSettleTimer.current);
+
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      setViewport((prev) => {
+        const rawScale = prev.scale * factor;
+        let newScale = rawScale;
+        if (rawScale < ZOOM_MIN) {
+          newScale = ZOOM_MIN + rubberBandClamp(rawScale - ZOOM_MIN, ZOOM_ELASTIC_RANGE);
+        } else if (rawScale > ZOOM_MAX) {
+          newScale = ZOOM_MAX + rubberBandClamp(rawScale - ZOOM_MAX, ZOOM_ELASTIC_RANGE);
+        }
+        const scaleRatio = newScale / prev.scale;
+        const newTx = mouseX - (mouseX - prev.tx) * scaleRatio;
+        const newTy = mouseY - (mouseY - prev.ty) * scaleRatio;
+        return { tx: newTx, ty: newTy, scale: newScale };
+      });
+
+      // Debounce the settle-back until the wheel gesture actually stops
+      zoomSettleTimer.current = setTimeout(settleZoomToBounds, 160);
+    },
+    [settleZoomToBounds],
+  );
 
   // ── Node click popover ────────────────────────────────────────────────────────
 
-  const handleNodeClick = useCallback(
-    (e: React.MouseEvent, node: NodeState) => {
-      e.stopPropagation();
-      if (selectedNode?.id === node.id) {
-        setSelectedNode(null);
-        setPopoverScreen(null);
-        return;
-      }
-      setSelectedNode(node);
-      // Anchor popover to screen coords of node centre
-      const svg = svgRef.current;
-      if (svg) {
-        const rect = svg.getBoundingClientRect();
-        const screenX = node.x * viewport.scale + viewport.tx + rect.left;
-        const screenY = node.y * viewport.scale + viewport.ty + rect.top;
-        setPopoverScreen({ x: screenX, y: screenY });
-      }
-    },
-    [selectedNode, viewport],
-  );
+  const handleNodeClick = useCallback((e: React.SyntheticEvent, node: NodeState) => {
+    e.stopPropagation();
+    setSelectedNodeId((prev) => (prev === node.id ? null : node.id));
+  }, []);
+
+  // Escape closes the popover — previously the only way to dismiss it was
+  // clicking its own close button or the backdrop.
+  useEffect(() => {
+    if (selectedNodeId === null) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedNodeId(null);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [selectedNodeId]);
+
+  const selectedNode =
+    selectedNodeId !== null ? (nodes.find((n) => n.id === selectedNodeId) ?? null) : null;
+
+  // Derived every render from the node's live position and the live
+  // viewport — this is what keeps the popover anchored to the node while the
+  // simulation settles, the node is dragged, or the board is panned/zoomed,
+  // instead of the popover drifting away from a stale, one-time snapshot.
+  const popoverScreen = (() => {
+    if (!selectedNode) return null;
+    const svg = svgRef.current;
+    if (!svg) return null;
+    const rect = svg.getBoundingClientRect();
+    return {
+      x: selectedNode.x * viewport.scale + viewport.tx + rect.left,
+      y: selectedNode.y * viewport.scale + viewport.ty + rect.top,
+    };
+  })();
 
   const edges = graph?.edges ?? [];
 
@@ -815,8 +880,7 @@ export const CorrelationBoard: React.FC<CorrelationBoardProps> = ({ caseId }) =>
             screenX={popoverScreen.x}
             screenY={popoverScreen.y}
             onClose={() => {
-              setSelectedNode(null);
-              setPopoverScreen(null);
+              setSelectedNodeId(null);
             }}
           />
         )}

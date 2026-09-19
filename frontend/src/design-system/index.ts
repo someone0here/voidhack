@@ -10,3 +10,4 @@ export * from './primitives/Button';
 export * from './primitives/GlassToolbar';
 export * from './primitives/StitchedDivider';
 export * from './primitives/Input';
+export * from './primitives/AppToaster';

@@ -66,7 +66,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           className={`relative flex items-center rounded-lg border transition-all duration-150 ${
             error
               ? 'border-terracotta/70 bg-terracotta/5 shadow-[inset_0_2px_4px_rgba(201,111,79,0.15)]'
-              : 'border-pine/20 bg-cream/70 shadow-[inset_0_2px_4px_rgba(46,58,47,0.10),inset_0_1px_2px_rgba(46,58,47,0.06),0_1px_0_rgba(255,255,255,0.7)] focus-within:border-pine/60 focus-within:bg-white/90 focus-within:shadow-[inset_0_2px_5px_rgba(46,58,47,0.16),0_0_0_2px_rgba(46,58,47,0.25)] hover:border-pine/35'
+              : 'border-pine/20 bg-cream/70 shadow-[inset_0_2px_4px_rgba(46,58,47,0.10),inset_0_1px_2px_rgba(46,58,47,0.06),0_1px_0_rgba(255,255,255,0.7)] focus-within:border-terracotta/70 focus-within:bg-white/90 focus-within:shadow-[inset_0_2px_5px_rgba(46,58,47,0.16),0_0_0_2px_rgba(201,111,79,0.4)] hover:border-pine/35'
           } ${disabled ? 'cursor-not-allowed bg-khaki/30 opacity-50' : ''}`}
         >
           {leftIcon && (

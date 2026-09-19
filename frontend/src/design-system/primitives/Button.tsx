@@ -20,14 +20,20 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
+  // bg-terracotta (DEFAULT) only gives cream text 3.3:1 — fails WCAG AA 4.5:1
+  // for normal-weight button text. bg-terracotta-dark holds 6.9:1. Hover/active
+  // move via opacity (not color), which preserves that ratio exactly instead
+  // of drifting back toward the lighter, failing shade.
   primary:
-    'bg-terracotta hover:bg-terracotta-light active:bg-terracotta-dark text-cream font-semibold shadow-[0_1px_2px_rgba(46,58,47,0.15),0_2px_4px_rgba(201,111,79,0.25)] border border-terracotta-dark/20',
+    'bg-terracotta-dark hover:opacity-90 active:opacity-80 text-cream font-semibold shadow-[0_1px_2px_rgba(46,58,47,0.15),0_2px_4px_rgba(201,111,79,0.25)] border border-terracotta-dark/20',
   secondary:
     'bg-transparent hover:bg-sage/10 active:bg-sage/20 text-pine font-semibold border-2 border-sage shadow-sm',
   ghost:
     'bg-transparent hover:bg-pine/5 active:bg-pine/10 text-pine font-medium border border-transparent',
+  // bg-dossier-crimson (#EF4444) only gives white text 3.76:1 — same failure
+  // mode as primary. red-700 clears 4.5:1; opacity carries hover/active.
   danger:
-    'bg-dossier-crimson hover:bg-red-600 text-white font-semibold shadow-sm border border-red-700',
+    'bg-red-700 hover:opacity-90 active:opacity-80 text-white font-semibold shadow-sm border border-red-800',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -65,7 +71,7 @@ export const Button: React.FC<ButtonProps> = ({
       whileTap={!disabled && !isLoading ? tapMotion : undefined}
       transition={shouldReduceMotion ? reducedMotionTransition : instantPressTransition}
       disabled={disabled || isLoading}
-      className={`relative inline-flex select-none items-center justify-center font-sans transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-2 focus-visible:ring-offset-cream disabled:pointer-events-none disabled:opacity-50 disabled:grayscale ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`relative inline-flex select-none items-center justify-center font-sans transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2 focus-visible:ring-offset-cream disabled:pointer-events-none disabled:opacity-50 disabled:grayscale ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       {...(props as React.ComponentPropsWithoutRef<typeof motion.button>)}
     >
       {/* Top subtle highlight rim evoking physical beveled edge on primary */}

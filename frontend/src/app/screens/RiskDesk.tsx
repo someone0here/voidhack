@@ -7,14 +7,15 @@
  * styled as physical toggle tabs and index switches — no HTML <select>.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { FolderCard, StampBadge, StitchedDivider } from '../../design-system';
 import {
   defaultSpringTransition,
   reducedMotionTransition,
 } from '../../design-system/motion';
-import { apiClient, RankedEntityRiskRead } from '../../lib/api-client';
+import { RankedEntityRiskRead } from '../../lib/api-client';
+import { useRisk } from '../../hooks/useRisk';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -150,7 +151,7 @@ const SortTabs: React.FC<{
         <button
           key={opt.key}
           onClick={() => onChange(opt.key)}
-          className="relative z-10 flex-1 rounded-md px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors"
+          className="relative z-10 flex-1 rounded-md px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta active:scale-95"
           style={{
             color: value === opt.key ? '#2E3A2F' : '#2E3A2F80',
           }}
@@ -182,7 +183,7 @@ const TypeFilterPills: React.FC<{
         <button
           key={t}
           onClick={() => onChange(t)}
-          className="relative rounded-full border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors"
+          className="relative rounded-full border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta active:scale-95"
           style={{
             borderColor: active === t ? '#2E3A2F' : '#2E3A2F33',
             color: active === t ? '#2E3A2F' : '#2E3A2F80',
@@ -319,32 +320,23 @@ const EntityRiskCard: React.FC<{
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export const RiskDesk: React.FC<RiskDeskProps> = ({ caseId }) => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [entities, setEntities] = useState<RankedEntityRiskRead[]>([]);
+  const riskQuery = useRisk(caseId);
+  // `riskQuery.data` is referentially stable across renders until it
+  // actually refetches, so memo it once here rather than falling back to a
+  // fresh `[]` literal every render (which would defeat the useMemo below).
+  const entities: RankedEntityRiskRead[] = useMemo(
+    () => riskQuery.data ?? [],
+    [riskQuery.data],
+  );
+  const loading = riskQuery.isPending;
+  const error = riskQuery.error ? riskQuery.error.message : null;
+
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [typeFilter, setTypeFilter] = useState<EntityTypeFilter>('all');
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    apiClient.cases
-      .getRiskScores(caseId)
-      .then((data) => {
-        if (!cancelled) setEntities(data);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : 'Failed to load risk data');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [caseId]);
+  // Risk data fetching now lives in `useRisk` (TanStack Query) above — it is
+  // invalidated automatically by `useEvidence`'s upload mutation, so scores
+  // update here without a manual page refresh after new evidence lands.
 
   const entityTypes = useMemo(
     () => [...new Set(entities.map((e) => e.entity_type))],

@@ -7,7 +7,7 @@
  * shows chain status. Export PDF triggers a real browser download.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { FolderCard, StampBadge, StitchedDivider } from '../../design-system';
 import {
@@ -15,6 +15,8 @@ import {
   reducedMotionTransition,
 } from '../../design-system/motion';
 import { apiClient, BriefExport, ChainVerificationResult } from '../../lib/api-client';
+import { useBrief } from '../../hooks/useBrief';
+import { useIntegrity } from '../../hooks/useIntegrity';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -442,39 +444,23 @@ const PrintedBrief: React.FC<{
 
 export const BriefViewer: React.FC<BriefViewerProps> = ({ caseId }) => {
   const shouldReduceMotion = useReducedMotion();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [brief, setBrief] = useState<BriefExport | null>(null);
-  const [integrity, setIntegrity] = useState<ChainVerificationResult | null>(null);
   const [pdfDownloading, setPdfDownloading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
+  // Brief JSON and custody-chain integrity fetching now live in `useBrief`
+  // and `useIntegrity` (TanStack Query) — both are invalidated automatically
+  // by `useEvidence`'s upload mutation, so this view reflects new evidence
+  // (updated totals, a re-verified custody chain) without a manual refresh.
+  const briefQuery = useBrief(caseId);
+  const integrityQuery = useIntegrity(caseId);
 
-    Promise.all([
-      apiClient.cases.getBriefJson(caseId),
-      apiClient.cases.getIntegrity(caseId),
-    ])
-      .then(([briefData, integrityData]) => {
-        if (!cancelled) {
-          setBrief(briefData);
-          setIntegrity(integrityData);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : 'Failed to load brief');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [caseId]);
+  const brief: BriefExport | null = briefQuery.data ?? null;
+  const integrity: ChainVerificationResult | null = integrityQuery.data ?? null;
+  const loading = briefQuery.isPending || integrityQuery.isPending;
+  const error = briefQuery.error
+    ? briefQuery.error.message
+    : integrityQuery.error
+      ? integrityQuery.error.message
+      : null;
 
   const handleExportPdf = () => {
     setPdfDownloading(true);

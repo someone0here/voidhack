@@ -37,6 +37,20 @@ export const CaseSwitcher: React.FC<CaseSwitcherProps> = ({ onCaseSelected }) =>
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isOpen]);
 
+  // Escape closes the dropdown — keyboard-only users had no way to dismiss it
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        setIsCreating(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
+
   const handleSelect = (caseId: number) => {
     selectCase(caseId);
     setIsOpen(false);
@@ -72,7 +86,7 @@ export const CaseSwitcher: React.FC<CaseSwitcherProps> = ({ onCaseSelected }) =>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="group flex items-center gap-2.5 rounded-lg border border-pine/20 bg-khaki-light/80 px-3 py-1.5 shadow-paper-sm transition-all hover:border-pine/40 hover:bg-khaki hover:shadow-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine"
+        className="group flex items-center gap-2.5 rounded-lg border border-pine/20 bg-khaki-light/80 px-3 py-1.5 shadow-paper-sm transition-all hover:border-pine/40 hover:bg-khaki hover:shadow-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
         aria-expanded={isOpen}
       >
         <span className="flex h-5 w-5 items-center justify-center rounded bg-pine/10 font-mono text-xs font-bold text-pine">

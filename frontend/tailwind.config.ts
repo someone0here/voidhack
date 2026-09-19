@@ -24,7 +24,11 @@ export default {
         terracotta: {
           DEFAULT: '#C96F4F',
           light: '#D78466',
-          dark: '#B15A3B',
+          // Darkened from #B15A3B: the original only cleared 4.42:1 on cream
+          // and 2.95:1 on khaki (fails WCAG AA 4.5:1 for normal text in both
+          // cases, since StampBadge/error text renders at 9-11px). This shade
+          // holds 6.9:1 on cream and 4.6:1 on khaki.
+          dark: '#84432C',
         },
         cream: {
           DEFAULT: '#F8F6EE',

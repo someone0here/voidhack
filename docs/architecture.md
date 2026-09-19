@@ -400,3 +400,41 @@ Each screen in `frontend/src/app/screens/` is a self-contained, single-responsib
 
 `frontend/src/lib/api-client.ts` is the typed fetch wrapper all four screens (and `CaseContext`) depend on. It mirrors every backend Pydantic schema referenced by the `/cases` API surface above, and its `ApiError` class normalizes all three backend error-body shapes: `IngestionError`/`ValueError` 400s (`{error, detail, request_id}`), plain `HTTPException` responses (`{detail}`), and FastAPI's 422 validation arrays (`{detail: [{msg, ...}]}`).
 
+## State Management
+
+Phase 9 shipped four independently-fetching screens; each owned its own `useEffect`/`useState` fetch-on-mount, its own loading/error booleans, and had no way to know when another screen's action (an upload on Intake) should invalidate its own data (the graph on Correlation, scores on Risk Desk). This phase replaces that pattern with a small, deliberately unglamorous split: **TanStack Query owns server data, React Context owns the one piece of real UI state, and everything else stays local.**
+
+### Server data: TanStack Query
+
+Every read from the backend now goes through a `useQuery` hook in `frontend/src/hooks/`, one per resource:
+
+| Hook | Backend route | Consumed by |
+|---|---|---|
+| `useCasesQuery` / `useCreateCase` | `GET/POST /cases` | `CaseContext` |
+| `useGraph(caseId)` | `GET /cases/{id}/graph` | `CorrelationBoard` |
+| `useRisk(caseId)` | `GET /cases/{id}/risk` | `RiskDesk` |
+| `useBrief(caseId, maskPii)` | `GET /cases/{id}/brief.json` | `BriefViewer` |
+| `useIntegrity(caseId)` | `GET /cases/{id}/integrity` | `BriefViewer` |
+| `useEvidence(caseId)` | `POST /cases/{id}/evidence` | `IntakeScreen` |
+
+All five query hooks read their cache key from `frontend/src/lib/queryKeys.ts` — one factory, so a hook and the mutation that invalidates it can never drift onto different key shapes. `frontend/src/lib/queryClient.ts` holds the one `QueryClient` for the app: a short (15s) `staleTime` so switching tabs back and forth doesn't refetch on every visit, no retries on 4xx (a 404 case or a 422 payload won't fix itself on retry), and — importantly for the error-handling requirement below — a global `onError` on both the `QueryCache` and `MutationCache`.
+
+**Why this over the Phase 9 pattern:** the four screens are not independent — they're four views onto one case's evolving evidence graph. `useEvidence`'s `onSuccess` calls `queryClient.invalidateQueries` against `graph`, `risk`, `integrity`, and `brief` for that case (the ticket asked for graph + risk specifically; integrity and brief are included too, since a new evidence file also extends the custody chain and changes the brief's summary counts — leaving those stale would be actively misleading in a chain-of-custody tool). Invalidation, not a manual refetch or a hand-written cache write, is the right primitive here: it lets each screen's own `useQuery` decide for itself whether it's mounted and needs to refetch right now, rather than `useEvidence` reaching into caches it doesn't conceptually own. The practical result: drop a file on the Intake tray, switch to Correlation or Risk Desk, and the new entities/scores are already there — no manual page refresh, verified end-to-end against a live backend with the Phase 2 fixture set (CDR → bank/UPI → email → Android log, uploaded in sequence into one case).
+
+### Global app state: React Context, not Zustand
+
+The one piece of state genuinely shared across the shell (toolbar, sidebar, all four screen views) is **which case is currently selected** — `activeCaseId`. `CaseContext` (`frontend/src/context/CaseContext.tsx`) now composes `useCasesQuery`/`useCreateCase` (the server data) with a single `useState<number | null>` (the selection) and exposes both through the existing `useCase()` hook, so no call site outside `CaseContext.tsx` itself needed to change.
+
+React Context over Zustand, deliberately: `activeCaseId` is a single scalar that changes on navigation — not on every keystroke, drag frame, or animation tick — and is already kept in sync with the URL (`/cases/:caseId/...`) by `AppShell`. Zustand's main advantage over Context, selector-based subscriptions that avoid re-rendering unrelated consumers on high-frequency updates, isn't a real win here: there's no high-frequency update to protect against, and a case switch legitimately means the whole shell re-renders anyway (new route, new data). Introducing a second state-management library for one selected-id value would be solving a problem this app doesn't have. (Contrast with `CorrelationBoard`'s live d3-force node positions, which correctly stay as `useRef`/local `useState` rather than living in any shared store — those genuinely are high-frequency and genuinely are local to one screen.)
+
+### Errors: one path from "API call fails" to "person sees something sane"
+
+Two mechanisms cover the two ways a screen can break:
+
+1. **A failed API call** (network down, 500, malformed evidence file, validation error) is caught by TanStack Query itself — it never throws into React's render tree. The `QueryCache`/`MutationCache` `onError` in `queryClient.ts` turns every one of these into a toast via `lib/toast.ts` (`notifyApiError`), styled with `AppToaster` (`design-system/primitives/AppToaster.tsx`, wrapping `sonner`) to match the field-dossier palette: cream/khaki surface, terracotta for errors, sage for success. This is ambient and additive — `CorrelationBoard`, `RiskDesk`, and `BriefViewer` still render their own inline `FolderCard` error state from `query.error` for the case where the *only* thing on screen is that failed fetch (nothing to toast "over"). `IntakeScreen` keeps its per-file error box (the verbatim backend `IngestionError` detail, unchanged from Phase 9) *and* gets a toast, since the file chip is one of potentially many and the toast is what a working investigator glances at.
+2. **A render-time exception** (a bad prop shape, a third-party library throwing mid-commit) is the one class of failure a query cache can't intercept, since it happens after data has already arrived. `AppErrorBoundary` (`components/shell/AppErrorBoundary.tsx`), mounted once around the whole app in `main.tsx`, catches it and renders a `FolderCard`-styled fallback instead of a blank white screen. It deliberately never prints `error.message` or `error.stack` to the page — those go to `console.error` for whoever's at the machine — because the audience here is an investigator, not a developer, and a raw stack trace is exactly what this phase was asked to stop showing.
+
+### Optimistic UI: evidence upload
+
+`IntakeScreen` already tracked a `pending → uploading → processed/failed` status per dropped file before this phase (Phase 9); that local state is what makes the document chip appear the instant a file is dropped rather than once the network resolves, which matters for the "golden hour" demo where visible speed is part of the pitch. This phase changes what powers the `uploading → processed` transition — the actual network call now goes through `useEvidence(caseId).mutateAsync(...)` instead of calling `apiClient` directly — so success both updates the chip in place *and* triggers the cross-screen cache invalidation described above, without changing the chip's already-instant appearance-on-drop behavior.
+
