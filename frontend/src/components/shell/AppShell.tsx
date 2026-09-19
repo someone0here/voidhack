@@ -17,9 +17,16 @@ import { EmptyCaseFolder } from '../cases/EmptyCaseFolder';
 export const AppShell: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { caseId, tab = 'intake' } = useParams<{ caseId?: string; tab?: string }>();
+  const { caseId } = useParams<{ caseId?: string }>();
   const { cases, activeCase, isLoading, createCase, setActiveCaseById } = useCase();
   const shouldReduceMotion = useReducedMotion();
+
+  // The router defines tabs as static child paths (intake/correlation/risk/brief),
+  // not as a `:tab` param, so useParams() can never return one. Derive the active
+  // tab from the last URL segment instead; fall back to 'intake' for unknown paths.
+  const lastPathSegment = location.pathname.split('/').filter(Boolean).pop();
+  const currentTab =
+    NAV_TABS.find((t) => t.pathSegment === lastPathSegment)?.id ?? 'intake';
 
   // Vertical anchor coordinate of the currently active tab (for spatial consistency)
   const [activeTabOriginY, setActiveTabOriginY] = useState<number>(60);
@@ -59,7 +66,7 @@ export const AppShell: React.FC = () => {
   };
 
   const handleCaseSelected = (newCaseId: number) => {
-    void navigate(`/cases/${newCaseId}/${tab}`);
+    void navigate(`/cases/${newCaseId}/${currentTab}`);
   };
 
   const springTransition = appleToFramerSpring({ damping: 1.0, response: 0.35 });
@@ -133,8 +140,6 @@ export const AppShell: React.FC = () => {
       </div>
     );
   }
-
-  const currentTab = tab || 'intake';
 
   return (
     <div className="relative min-h-screen bg-cream text-pine selection:bg-khaki selection:text-pine">
