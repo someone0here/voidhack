@@ -8,10 +8,12 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import api_router
 from app.core.config import settings
@@ -195,3 +197,35 @@ async def health_check() -> dict[str, str]:
         "phase": "Phase 6 - Brief Generation & API Complete",
         "service": settings.PROJECT_NAME,
     }
+
+
+# ---------------------------------------------------------------------------
+# Static Frontend (production single-service deploy only)
+#
+# When the frontend's Vite build output has been copied into ./static
+# (see the root Dockerfile), this serves it from the same origin as the
+# API — no separate frontend host, no CORS, one deploy. In local dev
+# (docker-compose, frontend on its own Vite dev server) ./static simply
+# doesn't exist and this block is skipped entirely.
+# ---------------------------------------------------------------------------
+_frontend_dist = Path(__file__).resolve().parent / "static"
+
+if _frontend_dist.is_dir():
+    app.mount(
+        "/assets",
+        StaticFiles(directory=_frontend_dist / "assets"),
+        name="frontend-assets",
+    )
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str):
+        """SPA fallback: serve index.html for any client-side route.
+
+        Explicit API routes above always match first since FastAPI/Starlette
+        checks routes in registration order — this catch-all is registered
+        last on purpose, so it only ever fires for paths nothing else claimed.
+        """
+        candidate = _frontend_dist / full_path
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(_frontend_dist / "index.html")
