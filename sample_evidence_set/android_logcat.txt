@@ -1,4 +1,0 @@
-03-15 10:15:30.102  1204  1502 D ConnectivityService: NetworkAgentInfo [WIFI () - 100] connected, ip=185.220.101.5 mac=00:1A:2B:3C:4D:5E
-03-15 10:15:31.240  2411  2411 I TelephonyRegistry: notifyActiveDataSubIdChanged: imei=860123456789012 phone=+919811122233
-03-15 10:16:00.512  3100  3100 I ActivityManager: START u0 {cmp=com.fakebank.alertapk/.MainActivity} from uid 10185
-03-15 10:16:05.811  3100  3142 D FakeBankAlert: Handshake established with command server at 185.220.101.5
