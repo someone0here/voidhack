@@ -215,7 +215,7 @@ export const EmptyCaseFolder: React.FC<EmptyCaseFolderProps> = ({
                     Evidentiary Pipeline Ready
                   </span>
                   <p className="font-mono text-xs text-pine/80">
-                    ✓ Section 65B/BSA 63 cryptographic custody chain enabled
+                    ✓ Section 63 BSA cryptographic custody chain enabled
                   </p>
                   <p className="font-mono text-xs text-pine/80">
                     ✓ Cross-source correlation & heuristic risk engine armed

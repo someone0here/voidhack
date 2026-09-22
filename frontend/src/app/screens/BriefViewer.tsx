@@ -115,7 +115,7 @@ const WaxSeal: React.FC<{ isValid: boolean }> = ({ isValid }) => {
           {label}
         </p>
         <p className="font-mono text-[9px] text-pine/50">
-          {isValid ? 'Section 65B IEA compliant' : 'Custody chain compromised'}
+          {isValid ? 'Section 63 BSA compliant' : 'Custody chain compromised'}
         </p>
       </div>
     </motion.div>
@@ -149,7 +149,7 @@ const BriefSkeleton: React.FC = () => (
     tabTitle="CASE // BRIEF"
     tabPosition="left"
     tabBadge="TAB 04"
-    classification="STATUTORY INVESTIGATIVE BRIEF // SECTION 65B COMPLIANT"
+    classification="STATUTORY INVESTIGATIVE BRIEF // SECTION 63 BSA COMPLIANT"
     elevation="raised"
   >
     <div className="flex flex-col gap-6">
@@ -431,8 +431,8 @@ const PrintedBrief: React.FC<{
             This brief is generated automatically for investigator reference and is not a
             substitute for judicial determination. All recommendations are non-directive
             and require human review. PII has been partially masked per operational
-            security protocol. Produced under Section 65B Indian Evidence Act / Section 63
-            Bharatiya Sakshya Adhiniyam 2023.
+            security protocol. Produced under Section 63, Bharatiya Sakshya Adhiniyam 2023
+            (successor to Section 65B, Indian Evidence Act 1872).
           </p>
         </div>
       </div>
@@ -482,7 +482,7 @@ export const BriefViewer: React.FC<BriefViewerProps> = ({ caseId }) => {
         tabTitle={`CASE ${caseId} // BRIEF`}
         tabPosition="left"
         tabBadge="TAB 04"
-        classification="STATUTORY INVESTIGATIVE BRIEF // SECTION 65B COMPLIANT"
+        classification="STATUTORY INVESTIGATIVE BRIEF // SECTION 63 BSA COMPLIANT"
         elevation="raised"
       >
         <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -498,7 +498,7 @@ export const BriefViewer: React.FC<BriefViewerProps> = ({ caseId }) => {
       tabTitle={`CASE ${caseId} // BRIEF`}
       tabPosition="left"
       tabBadge="TAB 04"
-      classification="STATUTORY INVESTIGATIVE BRIEF // SECTION 65B COMPLIANT"
+      classification="STATUTORY INVESTIGATIVE BRIEF // SECTION 63 BSA COMPLIANT"
       elevation="raised"
     >
       <div className="flex flex-col gap-5">
@@ -507,8 +507,8 @@ export const BriefViewer: React.FC<BriefViewerProps> = ({ caseId }) => {
           <div>
             <h2 className="type-display-lg text-pine">Court-Ready Investigative Brief</h2>
             <p className="type-body mt-1 text-pine/80">
-              Automated one-page evidentiary brief with Section 65B IEA / Section 63 BSA
-              2023 cryptographic chain verification.
+              Automated one-page evidentiary brief with Section 63, BSA 2023
+              cryptographic chain verification.
             </p>
           </div>
           <StampBadge

@@ -38,6 +38,6 @@ export const NAV_TABS: NavTabItem[] = [
     label: 'Investigative Brief',
     badge: '04',
     icon: '📄',
-    classification: 'SEC 65B // COURT READY',
+    classification: 'SEC 63 BSA // COURT READY',
   },
 ];
